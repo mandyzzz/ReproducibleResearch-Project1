@@ -1,0 +1,118 @@
+Reproducible Research
+=====================
+Project 1
+MZ
+
+**Total number of steps each day**
+Transform data 
+```{r}
+setwd("C:\\users\\zhuangmg\\Coursera\\Reproducible Research\\project 1")
+ActivityTable01<-read.csv("activity.csv")
+ActivityTable02<-aggregate(ActivityTable01$steps,by=list(ActivityTable01$date),FUN=sum,na.rm=TRUE)
+names(ActivityTable02)<-c("date","TotalSteps")
+print(ActivityTable02)
+```
+
+**Total number of steps each day**
+Construct histogram of total number of steps each day
+```{r}
+hist(ActivityTable02$TotalSteps,main="Histogramof Total Steps of Each Day",xlab="Total Steps")
+```
+
+**Total number of steps each day**
+Calculate mean & median
+```{r}
+mean(ActivityTable02$TotalSteps)
+median(ActivityTable02$TotalSteps)
+```
+
+**Average daily activity pattern**
+Transform data
+```{r}
+ActivityTable03<-aggregate(ActivityTable01$steps,by=list(ActivityTable01$interval),FUN=mean,na.rm=TRUE)
+names(ActivityTable03)<-c("interval","AverageSteps")
+print(ActivityTable03)
+```
+
+**Average daily activity pattern**
+Plot time series data 
+```{r}
+plot(ActivityTable03$interval,ActivityTable03$AverageSteps,type = "l",main="Daily Activity Pattern",xlab="Time Interval (5 min)", ylab="Average Steps")
+```
+
+**Average daily activity pattern**
+Find the interval that contains the maximum number of steps
+```{r}
+ActivityTable03[which.max(ActivityTable03$AverageSteps),]
+```
+
+**Imputing missing values**
+calculate the total number of rows with missing values
+```{r}
+nrow(ActivityTable01[!complete.cases(ActivityTable01),])
+```
+
+**Imputing missing values**
+Impute missing values using the mean value of that interval and create a new dataset
+```{r}
+fillNA <- numeric()
+for (i in 1:nrow(ActivityTable01)) {
+    obs <- ActivityTable01[i, ]
+    if (is.na(obs$steps)) {
+        steps <- subset(ActivityTable03, interval == obs$interval)$AverageSteps
+    } else {
+        steps <- obs$steps
+    }
+    fillNA <- c(fillNA, steps)
+}
+ActivityTable04=ActivityTable01
+ActivityTable04$steps=fillNA
+nrow(ActivityTable04[!complete.cases(ActivityTable04),])
+```
+Now ther is no missing values in the dataset
+
+**Imputing missing values**
+Transform data, construct histogram of total number of steps each day, and compare with previous histogram
+```{r}
+ActivityTable05<-aggregate(ActivityTable04$steps,by=list(ActivityTable04$date),FUN=sum,na.rm=TRUE)
+names(ActivityTable05)<-c("date","TotalSteps")
+hist(ActivityTable05$TotalSteps,main="Histogramof Total Steps of Each Day",xlab="Total Steps")
+```
+
+This second histogram is different because of the imputation of missing values.
+
+**Imputing missing values**
+Calculate mean & median and compare with previous values
+```{r}
+mean(ActivityTable05$TotalSteps)
+median(ActivityTable05$TotalSteps)
+```
+The mean and median are also different from previous values because of the imputation of missing values.
+
+**Differences between weekdays and weekends**
+Create a new factor variable in the dataset with two levels - "weekday" and "weekend" 
+```{r}
+ActivityTable04$date <- as.Date(ActivityTable04$date, "%Y-%m-%d")
+ActivityTable04$weekdays<-weekdays(ActivityTable04$date)
+ActivityTable04weekdays<-as.factor(ActivityTable04$weekdays)
+ActivityTable04$daylevel=ActivityTable04$weekdays
+for (i in 1:nrow(ActivityTable04)){
+      if (ActivityTable04$weekdays[i]=="Saturday"){
+      ActivityTable04$daylevel[i]<-"weekend"
+    } else if (ActivityTable04$weekdays[i]=="Sunday"){
+      ActivityTable04$daylevel[i]<-"weekend"
+    } else {
+      ActivityTable04$daylevel[i]<-"weekday"
+    }
+}
+ActivityTable06 <- aggregate(steps~interval+daylevel,FUN=mean,data=ActivityTable04)
+names(ActivityTable06)<-c("interval","daylevel","AverageSteps")
+```
+
+**Differences between weekdays and weekends**
+```{r}
+library(lattice)
+xyplot(AverageSteps ~ interval | daylevel,ActivityTable06, type = "l", layout = c(1, 2), main="Daily Activity Pattern:weekend vs. weekday",xlab="Time Interval (5 min)", ylab="Average Steps")
+```
+
+The patterns of weekday and weekend are slightly different.
